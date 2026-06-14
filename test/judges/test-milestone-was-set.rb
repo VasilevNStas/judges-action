@@ -101,6 +101,23 @@ class TestMilestoneWasSet < Jp::Test
     assert_nil(f['deadline'], 'deadline should be nil when due_on is nil')
   end
 
+  def test_handles_deleted_creator
+    WebMock.disable_net_connect!
+    rate_limit_up
+    stub_github('https://api.github.com/repos/foo/foo', body: { id: 42, full_name: 'foo/foo' })
+    stub_request(:get, 'https://api.github.com/repos/foo/foo/milestones?per_page=100&state=all').to_return(
+      status: 200,
+      body: [{ number: 3, title: 'v2.0', due_on: nil, created_at: '2025-03-01T12:00:00Z', creator: nil }].to_json,
+      headers: { 'Content-Type' => 'application/json' }
+    )
+    fb = Factbase.new
+    load_it('milestone-was-set', fb)
+    assert_equal(1, fb.all.size)
+    f = fb.pick(what: 'milestone-was-set')
+    refute_nil(f)
+    assert_nil(f['who'], 'who should be nil when creator is deleted')
+  end
+
   def test_rescues_forbidden_on_milestones_list
     WebMock.disable_net_connect!
     rate_limit_up

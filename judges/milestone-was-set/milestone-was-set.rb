@@ -37,7 +37,8 @@ Fbe.unmask_repos do |repo|
       f.when = m[:created_at]
       due = m[:due_on]
       f.deadline = due if due
-      f.who = m.dig(:creator, :id)
+      who = m.dig(:creator, :id)
+      f.who = who if who
       f.details = "Milestone #{m[:title].inspect} ##{m[:number]} was set in #{repo}."
       $loog.info("Milestone ##{m[:number]} found in #{repo}: #{m[:title].inspect}")
     end
